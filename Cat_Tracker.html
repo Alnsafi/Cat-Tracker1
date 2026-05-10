@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat_Tracker - Premium Signal Monitor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .app-container { 
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .header { 
+            text-align: center;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 { 
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p { 
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .connect-section {
+            text-align: center;
+            display: block;
+        }
+
+        .signal-section {
+            text-align: center;
+            display: none;
+        }
+
+        .device-icon { 
+            font-size: 64px;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .device-name-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn.connecting {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .btn-disconnect {
+            padding: 10px 20px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            color: #333;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-disconnect:hover {
+            background: #e5e7eb;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 13px;
+            display: none;
+        }
+
+        .message.show { display: block; }
+        .message.info { background: rgba(59, 130, 246, 0.1); color: #1e40af; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .message.error { background: rgba(239, 68, 68, 0.1); color: #7f1d1d; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .message.success { background: rgba(34, 197, 94, 0.1); color: #065f46; border: 1px solid rgba(34, 197, 94, 0.2); }
+
+        .signal-ring {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .ring-1 {
+            width: 220px;
+            height: 220px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            animation: pulse-ring 2s infinite;
+        }
+
+        .ring-2 {
+            width: 140px;
+            height: 140px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .ring-3 {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            z-index: 10;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .signal-value {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+        }
+
+        .signal-unit {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .distance-label {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .quality-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .quality-excellent { background: #d1fae5; color: #065f46; }
+        .quality-good { background: #bfdbfe; color: #1e40af; }
+        .quality-fair { background: #fef3c7; color: #78350f; }
+        .quality-weak { background: #fee2e2; color: #7f1d1d; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 14px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-unit {
+            font-size: 11px;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 14px;
+            padding: 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .info-row:last-child { border-bottom: none; }
+
+        .info-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-value.connected { color: #22c55e; }
+
+        .bottom-controls {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1>Cat_Tracker</h1>
+        <p>Premium Signal Monitor</p>
+    </div>
+
+    <div class="card">
+        <div id="messageDiv"></div>
+
+        <div class="connect-section" id="connectSection">
+            <div class="device-icon">📡</div>
+            <div class="device-name-text">Ready to Connect</div>
+            <button class="btn" onclick="connectToDevice()">
+                Connect to Cat_Tracker
+            </button>
+        </div>
+
+        <div class="signal-section" id="signalSection">
+            <div class="device-name-text">
+                <span class="status-dot"></span>
+                <span id="connectedName">Cat_Tracker</span>
+            </div>
+
+            <div class="signal-ring">
+                <div class="ring ring-1"></div>
+                <div class="ring ring-2"></div>
+                <div class="ring ring-3">
+                    <div>
+                        <div class="signal-value" id="rssiValue">--</div>
+                        <div class="signal-unit">dBm</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="distance-label" id="distanceLabel">-- meters away</div>
+
+            <div class="quality-badge quality-excellent" id="qualityBadge" style="display: none;">Excellent</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Signal Strength</div>
+                    <div class="stat-value" id="signalStat">--</div>
+                    <div class="stat-unit">dBm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Distance</div>
+                    <div class="stat-value" id="distanceStat">--</div>
+                    <div class="stat-unit">meters</div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="info-label">Frequency</span>
+                    <span class="info-value">2.4 GHz</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status</span>
+                    <span class="info-value connected">Connected</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Update</span>
+                    <span class="info-value" id="updateTime">--:--:--</span>
+                </div>
+            </div>
+
+            <div class="bottom-controls">
+                <button class="btn-disconnect" onclick="disconnectDevice()">Disconnect</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let device = null;
+let isConnected = false;
+let monitoringInterval = null;
+
+function showMessage(text, type = 'info') {
+    const div = document.getElementById('messageDiv');
+    div.textContent = text;
+    div.className = 'message show ' + type;
+    setTimeout(() => {
+        div.classList.remove('show');
+    }, 5000);
+}
+
+async function connectToDevice() {
+    try {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.classList.add('connecting');
+        btn.textContent = 'Searching...';
+
+        showMessage('🔍 Searching for Cat_Tracker...', 'info');
+
+        if (!navigator.bluetooth) {
+            throw new Error('Bluetooth Web API not supported');
+        }
+
+        device = await navigator.bluetooth.requestDevice({
+            filters: [{ name: 'Cat_Tracker' }]
+        });
+
+        btn.textContent = 'Connecting...';
+        showMessage('✓ Found Cat_Tracker! Connecting...', 'info');
+
+        const server = await device.gatt.connect();
+        isConnected = true;
+
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+
+        document.getElementById('connectSection').style.display = 'none';
+        document.getElementById('signalSection').style.display = 'block';
+        document.getElementById('connectedName').textContent = device.name || 'Cat_Tracker';
+
+        showMessage('✓ Connected successfully!', 'success');
+
+        startMonitoring(server);
+
+    } catch (error) {
+        if (error.name === 'NotFoundError') {
+            showMessage('✗ Cat_Tracker not found. Make sure it\'s powered on.', 'error');
+        } else if (error.name === 'NotAllowedError') {
+            showMessage('⊘ Connection cancelled.', 'error');
+        } else if (error.message.includes('not supported')) {
+            showMessage('✗ Bluetooth not available on this device or browser.', 'error');
+        } else {
+            showMessage('✗ Error: ' + error.message, 'error');
+        }
+
+        const btn = event.target;
+        btn.disabled = false;
+        btn.classList.remove('connecting');
+        btn.textContent = 'Connect to Cat_Tracker';
+    }
+}
+
+async function startMonitoring(server) {
+    try {
+        const service = await server.getPrimaryService("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+        const char = await service.getCharacteristic("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+
+        await char.startNotifications();
+
+        char.addEventListener('characteristicvaluechanged', (event) => {
+            const view = new DataView(event.target.value.buffer);
+            const rssi = view.getInt8(0);
+            displaySignal(rssi);
+        });
+
+        showMessage("Receiving RSSI data 🔥", "success");
+
+    } catch (error) {
+        showMessage("Failed to read RSSI: " + error, "error");
+    }
+}
+
+function parseSignalData(value) {
+    try {
+        if (!value || value.byteLength === 0) return null;
+
+        const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
+
+        for (let i = 0; i < value.byteLength; i++) {
+            const byte = view.getInt8(i);
+            if (byte >= -100 && byte <= -20) {
+                return byte;
+            }
+        }
+
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+let rssiHistory = [];
+const MAX_HISTORY = 8; // عدد القراءات اللي نسوي لها متوسط
+function displaySignal(rawRssi) {
+
+    // نحفظ القراءات
+    rssiHistory.push(rawRssi);
+    if (rssiHistory.length > MAX_HISTORY) {
+        rssiHistory.shift();
+    }
+
+    // نحسب المتوسط
+    const avgRssi = Math.round(
+        rssiHistory.reduce((a,b)=>a+b,0) / rssiHistory.length
+    );
+
+    const distance = calculateDistance(avgRssi);
+    const quality = getQuality(avgRssi);
+    const time = new Date().toLocaleTimeString();
+
+    document.getElementById('rssiValue').textContent = avgRssi;
+    document.getElementById('signalStat').textContent = avgRssi;
+    document.getElementById('distanceStat').textContent = Math.round(distance);
+    document.getElementById('distanceLabel').textContent = Math.round(distance) + ' meters away';
+    document.getElementById('updateTime').textContent = time;
+
+    const badge = document.getElementById('qualityBadge');
+    badge.className = 'quality-badge quality-' + quality;
+    badge.style.display = 'inline-block';
+}
+
+function calculateDistance(rssi) {
+    const txPower = -59;
+    return Math.pow(10, (txPower - rssi) / (10 * 2));
+}
+
+function getQuality(rssi) {
+    if (rssi >= -50) return 'excellent';
+    if (rssi >= -60) return 'good';
+    if (rssi >= -75) return 'fair';
+    return 'weak';
+}
+
+async function disconnectDevice() {
+    if (device && device.gatt.connected) {
+        try {
+            await device.gatt.disconnect();
+        } catch (e) {}
+    }
+    onDisconnected();
+}
+
+function onDisconnected() {
+    isConnected = false;
+    device = null;
+    if (monitoringInterval) clearInterval(monitoringInterval);
+
+    showMessage('✗ Disconnected', 'error');
+
+    document.getElementById('connectSection').style.display = 'block';
+    document.getElementById('signalSection').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
